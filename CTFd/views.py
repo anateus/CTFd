@@ -6,7 +6,7 @@ from flask.helpers import safe_join
 from jinja2.exceptions import TemplateNotFound
 from passlib.hash import bcrypt_sha256
 
-from CTFd.models import db, Teams, Solves, Awards, Files, Pages
+from CTFd.models import db, Teams, Solves, Awards, Files, Pages, Challenges
 from CTFd.utils import cache, markdown
 from CTFd import utils
 
@@ -246,15 +246,31 @@ def profile():
 @views.route('/files/<path:path>')
 def file_handler(path):
     f = Files.query.filter_by(location=path).first_or_404()
-    if f.chal:
-        if not utils.is_admin():
-            if not utils.ctftime():
-                if utils.view_after_ctf() and utils.ctf_started():
-                    pass
-                else:
-                    abort(403)
-    upload_folder = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
-    return send_file(safe_join(upload_folder, f.location))
+    chal = Challenges.query.filter_by(id=f.chal).first()
+
+    s3, bucket = utils.get_s3_conn(app)
+    if utils.is_admin():
+        key = f.location
+        url = s3.generate_presigned_url('get_object', Params = {
+            'Bucket': bucket,
+            'Key': key, })
+        return redirect(url)
+
+    if utils.user_can_view_challenges():
+        if not utils.ctftime():
+            if not utils.view_after_ctf():
+                abort(403)
+
+        if chal.hidden:
+            abort(403)
+
+        key = f.location
+        url = s3.generate_presigned_url('get_object', Params = {
+            'Bucket': bucket,
+            'Key': key, })
+        return redirect(url)
+    else:
+        return redirect(url_for('auth.login'))
 
 
 @views.route('/themes/<theme>/static/<path:path>')

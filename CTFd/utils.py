@@ -20,6 +20,8 @@ import urllib
 import dataset
 import zipfile
 import io
+import string
+import boto3
 
 from email.mime.text import MIMEText
 from flask import current_app as app, request, redirect, url_for, session, render_template, abort
@@ -343,30 +345,51 @@ def get_configurable_plugins():
             if os.path.isfile(os.path.join(dir, name, 'config.html'))]
 
 
-def upload_file(file, chalid):
-    filename = secure_filename(file.filename)
+def clean_filename(c):
+    if c in string.ascii_letters + string.digits + '-' + '_' + '.':
+        return True
 
+
+def get_s3_conn(app):
+    access_key_id = get_config('S3_ATTACHMENTS_ACCESS_KEY_ID')
+    secret_access_key = get_config('S3_ATTACHMENTS_SECRET_ACCESS_KEY')
+    if access_key_id and secret_access_key:
+        client = boto3.client(
+            's3',
+            aws_access_key_id=access_key_id,
+            aws_secret_access_key=secret_access_key
+        )
+        bucket = get_config('S3_ATTACHMENTS_BUCKET')
+        return client, bucket
+    else:
+        client = boto3.client('s3')
+        bucket = get_config('S3_ATTACHMENTS_BUCKET')
+        return client, bucket
+
+
+def upload_file(file, chalid):
+    s3, bucket = get_s3_conn(app)
+
+    filename = ''.join(filter(clean_filename, secure_filename(file.filename).replace(' ', '_')))
     if len(filename) <= 0:
         return False
 
     md5hash = hashlib.md5(os.urandom(64)).hexdigest()
 
-    upload_folder = os.path.join(os.path.normpath(app.root_path), app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(os.path.join(upload_folder, md5hash)):
-        os.makedirs(os.path.join(upload_folder, md5hash))
+    key = md5hash + '/' + filename
+    s3.upload_fileobj(file, bucket, key)
 
-    file.save(os.path.join(upload_folder, md5hash, filename))
-    db_f = Files(chalid, (md5hash + '/' + filename))
+    db_f = Files(chalid, key)
     db.session.add(db_f)
     db.session.commit()
-    return db_f.id, (md5hash + '/' + filename)
+    return True
 
 
-def delete_file(file_id):
-    f = Files.query.filter_by(id=file_id).first_or_404()
-    upload_folder = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
-    if os.path.exists(os.path.join(upload_folder, f.location)):  # Some kind of os.path.isfile issue on Windows...
-        os.unlink(os.path.join(upload_folder, f.location))
+def delete_file(filename):
+    s3, bucket = get_s3_conn(app)
+    f = Files.query.filter_by(id=filename).first_or_404()
+    key = f.location
+    s3.delete_object(Bucket=bucket, Key=key)
     db.session.delete(f)
     db.session.commit()
     return True

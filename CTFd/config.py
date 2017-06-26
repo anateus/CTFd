@@ -77,6 +77,21 @@ class Config(object):
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 
     '''
+    Configuration for S3 for attachments
+
+    S3_ATTACHMENTS_ACCESS_KEY_ID is your AWS Access Key. If you do not provide this, it will try to use an IAM role or credentials file.
+
+    S3_ATTACHMENTS_SECRET_ACCESS_KEY is your AWS Secret Key. If you do not provide this, it will try to use an IAM role or credentials file.
+
+    S3_ATTACHMENTS_BUCKET is the name of your Amazon S3 bucket.
+
+    Adapted from CTFd-S3-plugin https://github.com/CTFd/CTFd-S3-plugin
+    '''
+    S3_ATTACHMENTS_ACCESS_KEY_ID = os.getenv('CTFD_S3_ATTACHMENTS_ACCESS_KEY_ID', None)
+    S3_ATTACHMENTS_SECRET_ACCESS_KEY = os.getenv('CTFD_S3_ATTACHMENTS_SECRET_ACCESS_KEY', None)
+    S3_ATTACHMENTS_BUCKET = os.getenv('CTFD_S3_ATTACHMENTS_BUCKET', None)
+
+    '''
     FLASKS3_BUCKET_NAME is the S3 bucket to use to store/serve static theme files
     '''
     FLASKS3_BUCKET_NAME = os.getenv('CTFD_S3_STATIC_FILES_BUCKET', None)
