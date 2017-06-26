@@ -24,6 +24,7 @@ import io
 from email.mime.text import MIMEText
 from flask import current_app as app, request, redirect, url_for, session, render_template, abort
 from flask_caching import Cache
+from flask_session import Session
 from flask_migrate import Migrate, upgrade as migrate_upgrade, stamp as migrate_stamp
 from itsdangerous import Signer
 from six.moves.urllib.parse import urlparse, urljoin
@@ -32,6 +33,7 @@ from werkzeug.utils import secure_filename
 from CTFd.models import db, WrongKeys, Pages, Config, Tracking, Teams, Files, Containers, ip2long, long2ip
 
 cache = Cache()
+sess = Session()
 migrate = Migrate()
 markdown = mistune.Markdown()
 

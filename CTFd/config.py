@@ -1,14 +1,5 @@
 import os
 
-''' GENERATE SECRET KEY '''
-
-with open('.ctfd_secret_key', 'a+b') as secret:
-    secret.seek(0)  # Seek to beginning of file since a+ mode leaves you at the end and w+ deletes the file
-    key = secret.read()
-    if not key:
-        key = os.urandom(64)
-        secret.write(key)
-        secret.flush()
 
 ''' SERVER SETTINGS '''
 
@@ -24,7 +15,7 @@ class Config(object):
 
     http://flask.pocoo.org/docs/0.11/quickstart/#sessions
     '''
-    SECRET_KEY = os.environ.get('SECRET_KEY') or key
+    SECRET_KEY = os.getenv('CTFD_SECRET_KEY', str(os.urandom(64)))
 
     '''
     SQLALCHEMY_DATABASE_URI is the URI that specifies the username, password, hostname, port, and database of the server
@@ -32,7 +23,7 @@ class Config(object):
 
     http://flask-sqlalchemy.pocoo.org/2.1/config/#configuration-keys
     '''
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///{}/ctfd.db'.format(os.path.dirname(os.path.abspath(__file__)))
+    SQLALCHEMY_DATABASE_URI = os.getenv('CTFD_DATABASE_URL', 'sqlite:///{}/ctfd.db'.format(os.path.dirname(os.path.abspath(__file__))))
 
     '''
     SQLALCHEMY_TRACK_MODIFICATIONS is automatically disabled to suppress warnings and save memory. You should only enable
@@ -44,7 +35,13 @@ class Config(object):
     SESSION_TYPE is a configuration value used for Flask-Session. It is currently unused in CTFd.
     http://pythonhosted.org/Flask-Session/#configuration
     '''
-    SESSION_TYPE = "filesystem"
+    SESSION_TYPE = os.getenv('CTFD_SESSION_TYPE', 'filesystem')
+    if SESSION_TYPE == 'redis':
+        from redis import StrictRedis
+        SESSION_REDIS = StrictRedis(host=os.getenv('CTFD_CACHE_HOST'),
+                                    port=os.getenv('CTFD_CACHE_PORT'),
+                                    password=os.getenv('CTFD_CACHE_PASSWORD'),
+                                    db=os.getenv('CTFD_CACHE_DB'))
 
     '''
     SESSION_FILE_DIR is a configuration value used for Flask-Session. It is currently unused in CTFd.
@@ -65,12 +62,12 @@ class Config(object):
     '''
     HOST specifies the hostname where the CTFd instance will exist. It is currently unused.
     '''
-    HOST = ".ctfd.io"
+    HOST = os.getenv('CTFD_HOST', '')
 
     '''
     MAILFROM_ADDR is the email address that emails are sent from if not overridden in the configuration panel.
     '''
-    MAILFROM_ADDR = "noreply@ctfd.io"
+    MAILFROM_ADDR = os.getenv('CTFD_MAILFROM_ADDR', '')
 
     '''
     UPLOAD_FOLDER is the location where files are uploaded.
@@ -113,9 +110,15 @@ class Config(object):
 
     http://pythonhosted.org/Flask-Caching/#configuring-flask-caching
     '''
-    CACHE_TYPE = "simple"
+    CACHE_TYPE = os.getenv('CTFD_CACHE_TYPE', 'simple')
     if CACHE_TYPE == 'redis':
-        CACHE_REDIS_URL = os.environ.get('REDIS_URL')
+        CACHE_KEY_PREFIX = 'cache-'
+        CACHE_REDIS_URL = os.getenv('CTFD_CACHE_URL')
+        CACHE_REDIS_USER = os.getenv('CTFD_CACHE_USER'),
+        CACHE_REDIS_PASSWORD = os.getenv('CTFD_CACHE_PASSWORD'),
+        CACHE_REDIS_HOST = os.getenv('CTFD_CACHE_HOST'),
+        CACHE_REDIS_PORT = os.getenv('CTFD_CACHE_PORT'),
+        CACHE_REDIS_DB = os.getenv('CTFD_CACHE_DB')
 
 
 class TestingConfig(Config):
