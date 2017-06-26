@@ -106,11 +106,11 @@ def create_app(config='CTFd.config.Config'):
         from CTFd.scoreboard import scoreboard
         from CTFd.auth import auth
         from CTFd.admin import admin, admin_statistics, admin_challenges, admin_pages, admin_scoreboard, admin_containers, admin_keys, admin_teams
-        from CTFd.utils import init_utils, init_errors, init_logs
+        from CTFd.utils import init_utils, init_errors#, init_logs
 
         init_utils(app)
         init_errors(app)
-        init_logs(app)
+        #init_logs(app)  # TODO: log directly to cloudwatch?
 
         app.register_blueprint(views)
         app.register_blueprint(challenges)
