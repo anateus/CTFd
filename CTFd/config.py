@@ -92,11 +92,6 @@ class Config(object):
     S3_ATTACHMENTS_BUCKET = os.getenv('CTFD_S3_ATTACHMENTS_BUCKET', None)
 
     '''
-    FLASKS3_BUCKET_NAME is the S3 bucket to use to store/serve static theme files
-    '''
-    FLASKS3_BUCKET_NAME = os.getenv('CTFD_S3_STATIC_FILES_BUCKET', None)
-
-    '''
     TEMPLATES_AUTO_RELOAD specifies whether Flask should check for modifications to templates and
     reload them automatically
     '''
