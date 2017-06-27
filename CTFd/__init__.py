@@ -3,14 +3,13 @@ import os
 
 from distutils.version import StrictVersion
 from flask import Flask
-from flask_s3 import FlaskS3
 from jinja2 import FileSystemLoader
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy_utils import database_exists, create_database
 from six.moves import input
 
-from CTFd.utils import cache, sess, s3, migrate, migrate_upgrade, migrate_stamp
+from CTFd.utils import cache, sess, migrate, migrate_upgrade, migrate_stamp
 from CTFd import utils
 
 # Hack to support Unicode in Python 2 properly
@@ -81,10 +80,6 @@ def create_app(config='CTFd.config.Config'):
         # Register Flask-Session
         sess.init_app(app)
         app.sess = sess
-
-        # Register Flask-S3
-        s3.init_app(app)
-        app.s3 = s3
 
         version = utils.get_config('ctf_version')
 
