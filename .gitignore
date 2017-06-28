@@ -64,3 +64,4 @@ CTFd/uploads
 .data/
 .ctfd_secret_key
 .*.swp
+zappa-settings.json
